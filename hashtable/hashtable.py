@@ -17,12 +17,22 @@ class HashTable:
     Implement this.
     """
 
+    def __init__(self, capacity, in_head=None):
+        self.capacity = capacity
+        self.storage = [None] * self.capacity 
+
     def fnv1(self, key):
         """
         FNV-1 64-bit hash function
 
         Implement this, and/or DJB2.
         """
+        total = 0
+        for b in key.encode():
+            total += b
+            total &= 0xffffffffffffffff
+        
+        return total
 
     def djb2(self, key):
         """
@@ -30,6 +40,12 @@ class HashTable:
 
         Implement this, and/or FNV-1.
         """
+        total = 0
+        for b in key.encode():
+            total += b
+            total &= 0xffffffff
+        
+        return total
 
     def hash_index(self, key):
         """
@@ -47,6 +63,15 @@ class HashTable:
 
         Implement this.
         """
+        targ = self.hash_index(key)
+        if self.head is None:
+            self.head = HashTableEntry(key=targ, value=value)
+        else:
+            n = self.head
+            while n.next is not None and n.key is not targ:
+                n = n.next
+            n.next = HashTableEntry(key=targ, value=value)
+
 
     def delete(self, key):
         """
@@ -56,6 +81,34 @@ class HashTable:
 
         Implement this.
         """
+        if self.head is None:
+            return "Key Not Found"
+        else:
+            targ = self.hash_index(key=key)
+            # previous node
+            p = None
+            # current node
+            n = self.head
+            # while n has a next node
+            while n.next is not None:
+                # if the current node key is the hashed key we 
+                # are looking for, break the while loop
+                if n.key == targ:
+                    break
+                # else set previous = current node
+                # and current node = next node
+                else:
+                    p = n
+                    n = n.next
+
+            # Store the value to return it
+            val = n.value
+            # If p is not none (i.e. there is more than 1 node in linked list)
+            # Set p.next to n.next (skipping n)
+            if p is not None:
+                p.next = n.next
+            # finally delete n
+            del(n)
 
     def get(self, key):
         """
@@ -65,6 +118,15 @@ class HashTable:
 
         Implement this.
         """
+        targ = self.hash_index(key=key)
+        if self.head is not None:
+            n = self.head
+            while n.next is not None:
+                if n.key == targ:
+                    return n.value
+                n = n.next
+        
+        return "Key Not Found"
 
     def resize(self):
         """
