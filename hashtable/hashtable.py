@@ -8,6 +8,9 @@ class HashTableEntry:
         self.value = value
         self.next = None
 
+    def __repr__(self):
+        return (f"(key = {self.key}, value = {self.value})")
+
 
 class HashTable:
     """
@@ -63,14 +66,17 @@ class HashTable:
 
         Implement this.
         """
-        targ = self.hash_index(key)
-        if self.head is None:
-            self.head = HashTableEntry(key=targ, value=value)
+        index = self.hash_index(key)
+        if self.storage[index] is None:
+            self.storage[index] = HashTableEntry(key=key, value=value)
         else:
-            n = self.head
-            while n.next is not None and n.key is not targ:
+            n = self.storage[index]
+            while n.next is not None and n.key != key:
                 n = n.next
-            n.next = HashTableEntry(key=targ, value=value)
+            if n.key == key:
+                    n.value = value
+            else:
+                n.next = HashTableEntry(key=key, value=value)
 
 
     def delete(self, key):
@@ -81,34 +87,35 @@ class HashTable:
 
         Implement this.
         """
-        if self.head is None:
-            return "Key Not Found"
+        index = self.hash_index(key=key)
+        if self.storage[index] is None:
+            return None
         else:
-            targ = self.hash_index(key=key)
             # previous node
             p = None
             # current node
-            n = self.head
+            n = self.storage[index]
             # while n has a next node
             while n.next is not None:
                 # if the current node key is the hashed key we 
                 # are looking for, break the while loop
-                if n.key == targ:
+                if n.key == key:
                     break
                 # else set previous = current node
                 # and current node = next node
                 else:
                     p = n
                     n = n.next
-
+            
             # Store the value to return it
             val = n.value
             # If p is not none (i.e. there is more than 1 node in linked list)
             # Set p.next to n.next (skipping n)
-            if p is not None:
-                p.next = n.next
+            if p is None:
+                self.storage[index] = None
             # finally delete n
-            del(n)
+            else:
+                p.next = n.next
 
     def get(self, key):
         """
@@ -118,15 +125,16 @@ class HashTable:
 
         Implement this.
         """
-        targ = self.hash_index(key=key)
-        if self.head is not None:
-            n = self.head
+        index = self.hash_index(key=key)
+        if self.storage[index] is not None:
+            n = self.storage[index]
             while n.next is not None:
-                if n.key == targ:
+                if n.key == key:
                     return n.value
                 n = n.next
+            return n.value
         
-        return "Key Not Found"
+        return None
 
     def resize(self):
         """
@@ -135,31 +143,32 @@ class HashTable:
 
         Implement this.
         """
+        key_values = {}
+        for head in self.storage:
+            if head is None:
+                pass
+            else:
+                n = head
+                key_values[n.key] = n.value
+                while n.next is not None:
+                    key_values[n.key] = n.value
+                    n = n.next
+        
+        t_ht = HashTable(self.capacity*2)
+        for key,value in key_values.items():
+            t_ht.put(key, value)
+        
+        self.capacity *= 2
+        self.storage = t_ht.storage
 
 if __name__ == "__main__":
     ht = HashTable(2)
 
     ht.put("line_1", "Tiny hash table")
     ht.put("line_2", "Filled beyond capacity")
-    ht.put("line_3", "Linked list saves the day!")
+    
+    print(ht.storage)
 
-    print("")
+    ht.delete("line_1")
 
-    # Test storing beyond capacity
-    print(ht.get("line_1"))
-    print(ht.get("line_2"))
-    print(ht.get("line_3"))
-
-    # Test resizing
-    old_capacity = len(ht.storage)
-    ht.resize()
-    new_capacity = len(ht.storage)
-
-    print(f"\nResized from {old_capacity} to {new_capacity}.\n")
-
-    # Test if data intact after resizing
-    print(ht.get("line_1"))
-    print(ht.get("line_2"))
-    print(ht.get("line_3"))
-
-    print("")
+    print(ht.storage)
