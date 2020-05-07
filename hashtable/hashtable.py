@@ -20,9 +20,11 @@ class HashTable:
     Implement this.
     """
 
-    def __init__(self, capacity, in_head=None):
+    def __init__(self, capacity, minimum_size=128):
         self.capacity = capacity
         self.storage = [None] * self.capacity 
+        self.minimum_size = minimum_size
+        self.size = 0
 
     def fnv1(self, key):
         """
@@ -69,14 +71,30 @@ class HashTable:
         index = self.hash_index(key)
         if self.storage[index] is None:
             self.storage[index] = HashTableEntry(key=key, value=value)
+            self.size += 1
         else:
             n = self.storage[index]
-            while n.next is not None and n.key != key:
-                n = n.next
             if n.key == key:
                     n.value = value
-            else:
-                n.next = HashTableEntry(key=key, value=value)
+                    return
+            while n.next is not None:
+                if n.key == key:
+                    n.value = value
+                    return
+                n = n.next
+            
+            n.next = HashTableEntry(key=key, value=value)
+            self.size += 1
+
+        # Check load factor if greater than 0.7 (70% full)
+        if (self.size / self.capacity) <= 0.2:
+            # If load factor less than 0.2 and capacity is greater
+            # than minimum_size (default 128), half the table size
+            if not self.capacity <= self.minimum_size:
+                self.resize(multiplier=0.5)
+        elif (self.size / self.capacity) >= 0.7:
+                # If load factor greater than 0.7, double size
+                self.resize(multiplier=2)
 
 
     def delete(self, key):
@@ -100,6 +118,11 @@ class HashTable:
                 # if the current node key is the hashed key we 
                 # are looking for, break the while loop
                 if n.key == key:
+                    if p is None:
+                        self.storage[index] = n.next
+                    else:
+                        p.next = n.next
+                    self.size -= 1
                     break
                 # else set previous = current node
                 # and current node = next node
@@ -107,15 +130,23 @@ class HashTable:
                     p = n
                     n = n.next
             
-            # Store the value to return it
-            val = n.value
             # If p is not none (i.e. there is more than 1 node in linked list)
             # Set p.next to n.next (skipping n)
-            if p is None:
+            if p is None and n.key == key:
                 self.storage[index] = None
-            # finally delete n
-            else:
-                p.next = n.next
+                self.size -= 1
+        
+        if (self.size / self.capacity) <= 0.2:
+            # If load factor less than 0.2 and capacity is greater
+            # than minimum_size (default 128), halve the table size
+            if not self.capacity <= self.minimum_size:
+                self.resize(multiplier=0.5)
+        elif (self.size / self.capacity) >= 0.7:
+                # If load factor greater than 0.7, double size
+                self.resize(multiplier=2)
+
+        # return the value from the node when it is found
+        return
 
     def get(self, key):
         """
@@ -136,7 +167,7 @@ class HashTable:
         
         return None
 
-    def resize(self):
+    def resize(self, multiplier=2):
         """
         Doubles the capacity of the hash table and
         rehash all key/value pairs.
@@ -154,18 +185,28 @@ class HashTable:
                     key_values[n.key] = n.value
                     n = n.next
         
-        t_ht = HashTable(self.capacity*2)
+        new_capacity = int(self.capacity*multiplier)
+        t_ht = HashTable(new_capacity)
         for key,value in key_values.items():
             t_ht.put(key, value)
         
-        self.capacity *= 2
+        self.capacity = t_ht.capacity
+        del(self.storage)
         self.storage = t_ht.storage
 
 if __name__ == "__main__":
     ht = HashTable(2)
 
+    print((len(ht.storage),ht.size, ht.capacity))
+
     ht.put("line_1", "Tiny hash table")
+    print((len(ht.storage),ht.size, ht.capacity, '1'))
     ht.put("line_2", "Filled beyond capacity")
+    print((len(ht.storage),ht.size, ht.capacity, '2'))
+    ht.put("line_3", "Filled beyond capacity")
+    print((len(ht.storage),ht.size, ht.capacity, '3'))
+    ht.put("line_4", "Filled beyond capacity")
+    print((len(ht.storage),ht.size, ht.capacity, '4'))
     
     print(ht.storage)
 

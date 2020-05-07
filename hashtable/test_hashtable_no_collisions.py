@@ -48,6 +48,10 @@ class TestHashTable(unittest.TestCase):
         ht.put("key-0", "val-0")
         ht.put("key-1", "val-1")
         ht.put("key-2", "val-2")
+        ht.put("key-3", "val-2")
+        ht.put("key-4", "val-2")
+        ht.put("key-5", "val-2")
+        ht.put("key-6", "val-2")
 
         return_value = ht.get("key-0")
         self.assertTrue(return_value == "val-0")
@@ -76,7 +80,7 @@ class TestHashTable(unittest.TestCase):
 
         ht.resize()
 
-        self.assertTrue(len(ht.storage) == 0x20000)
+        self.assertTrue(len(ht.storage) == 128)
 
         return_value = ht.get("key-0")
         self.assertTrue(return_value == "val-0")
